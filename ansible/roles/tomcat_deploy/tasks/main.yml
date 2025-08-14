@@ -1,0 +1,95 @@
+---
+- name: Validate input
+  ansible.builtin.assert:
+    that:
+      - tomcat_war_src | length > 0 or tomcat_war_url | length > 0
+    fail_msg: "Set tomcat_war_src or tomcat_war_url."
+
+- name: Autodetect Tomcat paths when not provided
+  block:
+    - name: Probe tomcat10 webapps
+      ansible.builtin.stat:
+        path: /var/lib/tomcat10/webapps
+      register: st10
+    - name: Probe tomcat9 webapps
+      ansible.builtin.stat:
+        path: /var/lib/tomcat9/webapps
+      register: st9
+    - name: Set autodetected paths
+      ansible.builtin.set_fact:
+        _auto_webapps: >-
+          {{ '/var/lib/tomcat10/webapps' if st10.stat.exists else
+             ('/var/lib/tomcat9/webapps' if st9.stat.exists else '') }}
+        _auto_service: >-
+          {{ 'tomcat10' if st10.stat.exists else
+             ('tomcat9' if st9.stat.exists else '') }}
+  when: tomcat_webapps_dir | length == 0 or tomcat_service_name | length == 0
+
+- name: Finalize variables
+  ansible.builtin.set_fact:
+    _webapps_dir: "{{ (tomcat_webapps_dir | length > 0) | ternary(tomcat_webapps_dir, _auto_webapps) }}"
+    _service_name: "{{ (tomcat_service_name | length > 0) | ternary(tomcat_service_name, _auto_service) }}"
+
+- name: Fail if we couldn't autodetect paths
+  ansible.builtin.assert:
+    that:
+      - _webapps_dir | length > 0
+    fail_msg: "Could not determine Tomcat webapps dir. Set tomcat_webapps_dir explicitly."
+
+- name: Compute deployment targets
+  ansible.builtin.set_fact:
+    _deploy_name: >-
+      {{ (tomcat_context_path | default('')) | length > 0
+          | ternary(tomcat_context_path, tomcat_app_name) }}
+    _war_filename: >-
+      {{ ((tomcat_context_path | default('')) | length > 0
+           and tomcat_context_path == 'ROOT')
+           | ternary('ROOT.war', ((tomcat_context_path | default('')) | length > 0
+                                   | ternary(tomcat_context_path, tomcat_app_name)) ~ '.war') }}
+    _war_final_path: "{{ _webapps_dir }}/{{ _war_filename }}"
+    _tmp_war_path: "/tmp/{{ _war_filename }}"
+
+- name: Ensure webapps directory exists
+  ansible.builtin.file:
+    path: "{{ _webapps_dir }}"
+    state: directory
+    owner: "{{ tomcat_owner }}"
+    group: "{{ tomcat_group }}"
+    mode: "0755"
+
+- name: Fetch WAR from URL (if provided)
+  ansible.builtin.get_url:
+    url: "{{ tomcat_war_url }}"
+    dest: "{{ _tmp_war_path }}"
+    checksum: "{{ tomcat_war_checksum if (tomcat_war_checksum | length > 0) else omit }}"
+    mode: "0644"
+  when: tomcat_war_url | length > 0
+
+- name: Copy WAR from controller (if provided)
+  ansible.builtin.copy:
+    src: "{{ tomcat_war_src }}"
+    dest: "{{ _tmp_war_path }}"
+    mode: "0644"
+    checksum: "{{ tomcat_war_checksum if (tomcat_war_checksum | length > 0) else omit }}"
+  when: tomcat_war_src | length > 0
+
+- name: Remove exploded app directory (if exists and requested)
+  ansible.builtin.file:
+    path: "{{ _webapps_dir }}/{{ _deploy_name }}"
+    state: absent
+  when: clean_exploded_on_update
+
+- name: Deploy WAR into webapps
+  ansible.builtin.copy:
+    src: "{{ _tmp_war_path }}"
+    dest: "{{ _war_final_path }}"
+    owner: "{{ tomcat_owner }}"
+    group: "{{ tomcat_group }}"
+    mode: "0644"
+    backup: true
+  notify: restart tomcat (deploy)
+
+- name: Clean temp WAR
+  ansible.builtin.file:
+    path: "{{ _tmp_war_path }}"
+    state: absent

@@ -1,0 +1,6 @@
+---
+- name: restart tomcat (deploy)
+  ansible.builtin.service:
+    name: "{{ tomcat_service_name }}"
+    state: restarted
+  when: restart_on_deploy and (tomcat_service_name | length > 0)

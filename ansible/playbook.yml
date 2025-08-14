@@ -1,0 +1,13 @@
+---
+- name: Configure Golden AMI with Tomcat and app
+  hosts: default
+  gather_facts: true
+  become: true
+  roles:
+    - role: roles/tomcat
+    - role: roles/tomcat_deploy
+      vars:
+        tomcat_app_name: "{{ user_app_name }}"
+        tomcat_context_path: "{{ user_context_path }}"
+        tomcat_war_url: "{{ user_war_url }}"
+        tomcat_war_checksum: "{{ user_war_checksum | default('') }}"

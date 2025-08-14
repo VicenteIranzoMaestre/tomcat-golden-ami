@@ -1,0 +1,74 @@
+name: Build Golden AMI
+
+on:
+  workflow_dispatch:
+    inputs:
+      ubuntu_series:
+        description: "Ubuntu series: jammy (22.04) or noble (24.04)"
+        required: true
+        default: noble
+      region:
+        description: "AWS region"
+        required: true
+        default: eu-west-1
+      user_app_name:
+        description: "Application name"
+        required: true
+        default: myapp
+      user_context_path:
+        description: "Context path (use ROOT for /)"
+        required: true
+        default: ""
+      user_war_url:
+        description: "URL to WAR artifact"
+        required: true
+        default: ""
+      user_war_checksum:
+        description: "Optional checksum, e.g., sha256:..."
+        required: false
+
+permissions:
+  id-token: write   # for OIDC to AWS
+  contents: read
+
+jobs:
+  packer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ github.event.inputs.region }}
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+
+      - name: Cache Packer plugins
+        uses: actions/cache@v4
+        with:
+          path: ~/.config/packer/plugins
+          key: ${{ runner.os }}-packer-${{ hashFiles('packer/**/*.pkr.hcl') }}
+
+      - name: Packer Init
+        working-directory: packer
+        run: packer init .
+
+      - name: Packer Validate
+        working-directory: packer
+        run: |
+          packer validate -var "region=${{ github.event.inputs.region }}" -var "ubuntu_series=${{ github.event.inputs.ubuntu_series }}" -var "user_app_name=${{ github.event.inputs.user_app_name }}" -var "user_context_path=${{ github.event.inputs.user_context_path }}" -var "user_war_url=${{ github.event.inputs.user_war_url }}" -var "user_war_checksum=${{ github.event.inputs.user_war_checksum }}" ubuntu-golden.pkr.hcl
+
+      - name: Packer Build
+        working-directory: packer
+        run: |
+          packer build -var "region=${{ github.event.inputs.region }}" -var "ubuntu_series=${{ github.event.inputs.ubuntu_series }}" -var "user_app_name=${{ github.event.inputs.user_app_name }}" -var "user_context_path=${{ github.event.inputs.user_context_path }}" -var "user_war_url=${{ github.event.inputs.user_war_url }}" -var "user_war_checksum=${{ github.event.inputs.user_war_checksum }}" ubuntu-golden.pkr.hcl
+
+      - name: Upload manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packer-manifest
+          path: packer/packer-manifest.json

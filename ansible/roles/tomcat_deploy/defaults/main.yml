@@ -1,0 +1,22 @@
+---
+# Where to deploy; leave empty to auto-detect tomcat10 or tomcat9
+tomcat_webapps_dir: ""
+# Service name to restart; leave empty to auto-detect
+tomcat_service_name: ""
+
+# WAR selection (one of these must be set)
+tomcat_war_src: ""            # controller-local path to a WAR
+tomcat_war_url: ""            # remote URL to a WAR
+tomcat_war_checksum: ""       # optional (e.g. sha256:...)
+
+# Context
+tomcat_app_name: "myapp"
+tomcat_context_path: ""       # set 'ROOT' for /, otherwise derives from app name
+
+# Ownership
+tomcat_owner: "tomcat"
+tomcat_group: "tomcat"
+
+# Behavior
+restart_on_deploy: true
+clean_exploded_on_update: true

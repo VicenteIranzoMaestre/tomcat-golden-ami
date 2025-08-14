@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  role_name: tomcat
+  author: your_name
+  description: Install Tomcat 9 on Ubuntu 22.04 or Tomcat 10 on Ubuntu 24.04
+  license: MIT
+  min_ansible_version: "2.12"
+  platforms:
+    - name: Ubuntu
+      versions: [jammy, noble]

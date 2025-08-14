@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: tomcat_deploy
+  author: your_name
+  description: Deploy a WAR to an existing Tomcat (9 or 10) on Ubuntu
+  license: MIT
+  min_ansible_version: "2.12"
+  platforms:
+    - name: Ubuntu
+      versions: [jammy, noble]
+dependencies: []

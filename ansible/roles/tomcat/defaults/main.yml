@@ -1,0 +1,30 @@
+---
+# JVM
+tomcat_java_package: default-jdk-headless
+tomcat_java_opts: "-Xms256m -Xmx512m -XX:+UseG1GC"
+
+# Server settings (only applied if you enable manage_server_xml)
+tomcat_port: 8080
+tomcat_shutdown_port: 8005
+tomcat_ajp_port: 8009
+tomcat_bind_address: "0.0.0.0"
+
+# Manage /etc/default/tomcatX (recommended)
+manage_tomcat_default: true
+
+# Manage server.xml (optional; Ubuntu’s package provides sane defaults)
+manage_server_xml: false
+server_xml_path: "/etc/{{ tomcat_pkg }}/server.xml"
+
+# --- WAR deployment options ---
+tomcat_deploy_enabled: false          # set true to deploy a WAR
+tomcat_app_name: "myapp"              # used if tomcat_context_path not set
+tomcat_context_path: ""               # e.g. 'ROOT' for /, or leave empty to use app name (/myapp)
+tomcat_war_src: ""                    # controller-local path to a WAR (mutually exclusive with tomcat_war_url)
+tomcat_war_url: ""                    # remote URL to WAR (mutually exclusive with tomcat_war_src)
+tomcat_war_checksum: ""               # optional checksum for get_url/copy (e.g. sha256:...)
+tomcat_webapps_dir: "/var/lib/{{ tomcat_pkg }}/webapps"
+tomcat_owner: "tomcat"
+tomcat_group: "tomcat"
+tomcat_auto_restart_on_deploy: true   # restart Tomcat when WAR changes
+tomcat_clean_exploded_on_update: true # remove exploded dir before new WAR

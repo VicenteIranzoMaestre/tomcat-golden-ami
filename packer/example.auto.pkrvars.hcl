@@ -1,0 +1,6 @@
+region          = "eu-west-1"
+ubuntu_series   = "noble" # or "jammy"
+user_app_name   = "hello"
+user_context_path = ""
+user_war_url    = "https://repo.example.com/hello-1.0.0.war"
+# user_war_checksum = "sha256:..."
