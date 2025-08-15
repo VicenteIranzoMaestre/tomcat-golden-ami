@@ -49,9 +49,7 @@ variable "user_war_checksum" {
 }
 
 locals {
-  source_filter_name = var.ubuntu_series == "noble" ?
-    "ubuntu/images/hvm-ssd/ubuntu-noble-24.04-amd64-server-*" :
-    "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
+  source_filter_name = var.ubuntu_series == "noble" ? "ubuntu/images/hvm-ssd/ubuntu-noble-24.04-amd64-server-*" : "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
 }
 
 source "amazon-ebs" "ubuntu" {
