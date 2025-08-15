@@ -21,13 +21,20 @@
         _tomcat_major: >-
           {{ '10' if st10.stat.exists else
              ('9' if st9.stat.exists else '') }}
-  when: tomcat_webapps_dir | length == 0 or tomcat_service_name | length == 0
+  when: (tomcat_webapps_dir | default('') | length) == 0 or (tomcat_service_name | default('') | length) == 0
+
 
 - name: Finalize service and webapps dir
   ansible.builtin.set_fact:
     _webapps_dir: "{{ (tomcat_webapps_dir | length > 0) | ternary(tomcat_webapps_dir, _auto_webapps) }}"
     _service_name: "{{ (tomcat_service_name | length > 0) | ternary(tomcat_service_name, _auto_service) }}"
 
+- name: Derive tomcat major from service name if needed
+  ansible.builtin.set_fact:
+    _tomcat_major: >-
+      {{ '10' if (_service_name | default('') | regex_search('tomcat10')) else
+         ('9'  if (_service_name | default('') | regex_search('tomcat9'))  else (_tomcat_major | default(''))) }}
+         
 - name: Fail if we couldn't autodetect paths
   ansible.builtin.assert:
     that:
