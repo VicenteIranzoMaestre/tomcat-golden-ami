@@ -11,13 +11,15 @@
     tomcat_pkg: >-
       {{ 'tomcat10' if (ansible_facts.distribution == 'Ubuntu'
                         and ansible_facts.distribution_version is version('24.04', '>=')) else 'tomcat9' }}
-    tomcat_service: "{{ tomcat_pkg }}"
+    tomcat_service: >-
+      {{ 'tomcat10' if (ansible_facts.distribution == 'Ubuntu'
+                        and ansible_facts.distribution_version is version('24.04', '>=')) else 'tomcat9' }}
 
 - name: Derive server_xml_path if unset
   ansible.builtin.set_fact:
     _server_xml_path: "/etc/{{ tomcat_pkg }}/server.xml"
   when: (server_xml_path | default('')) | length == 0
-  
+
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: true
