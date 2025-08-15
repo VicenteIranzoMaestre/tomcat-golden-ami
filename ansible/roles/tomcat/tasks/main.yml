@@ -13,6 +13,11 @@
                         and ansible_facts.distribution_version is version('24.04', '>=')) else 'tomcat9' }}
     tomcat_service: "{{ tomcat_pkg }}"
 
+- name: Derive server_xml_path if unset
+  ansible.builtin.set_fact:
+    _server_xml_path: "/etc/{{ tomcat_pkg }}/server.xml"
+  when: (server_xml_path | default('')) | length == 0
+  
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: true

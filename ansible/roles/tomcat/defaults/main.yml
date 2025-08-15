@@ -14,7 +14,7 @@ manage_tomcat_default: true
 
 # Manage server.xml (optional; Ubuntu’s package provides sane defaults)
 manage_server_xml: false
-server_xml_path: "/etc/{{ tomcat_pkg }}/server.xml"
+server_xml_path: ""
 
 # --- WAR deployment options ---
 tomcat_deploy_enabled: false          # set true to deploy a WAR
