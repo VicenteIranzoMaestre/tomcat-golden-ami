@@ -1,10 +1,5 @@
 ---
-- name: Validate input
-  ansible.builtin.assert:
-    that:
-      - tomcat_war_src | length > 0 or tomcat_war_url | length > 0
-    fail_msg: "Set tomcat_war_src or tomcat_war_url."
-
+# Detect Tomcat install (9 vs 10) and paths
 - name: Autodetect Tomcat paths when not provided
   block:
     - name: Probe tomcat10 webapps
@@ -15,7 +10,7 @@
       ansible.builtin.stat:
         path: /var/lib/tomcat9/webapps
       register: st9
-    - name: Set autodetected paths
+    - name: Set autodetected paths and major version
       ansible.builtin.set_fact:
         _auto_webapps: >-
           {{ '/var/lib/tomcat10/webapps' if st10.stat.exists else
@@ -23,9 +18,12 @@
         _auto_service: >-
           {{ 'tomcat10' if st10.stat.exists else
              ('tomcat9' if st9.stat.exists else '') }}
+        _tomcat_major: >-
+          {{ '10' if st10.stat.exists else
+             ('9' if st9.stat.exists else '') }}
   when: tomcat_webapps_dir | length == 0 or tomcat_service_name | length == 0
 
-- name: Finalize variables
+- name: Finalize service and webapps dir
   ansible.builtin.set_fact:
     _webapps_dir: "{{ (tomcat_webapps_dir | length > 0) | ternary(tomcat_webapps_dir, _auto_webapps) }}"
     _service_name: "{{ (tomcat_service_name | length > 0) | ternary(tomcat_service_name, _auto_service) }}"
@@ -34,8 +32,38 @@
   ansible.builtin.assert:
     that:
       - _webapps_dir | length > 0
-    fail_msg: "Could not determine Tomcat webapps dir. Set tomcat_webapps_dir explicitly."
+      - _service_name | length > 0
+    fail_msg: "Could not determine Tomcat install. Set tomcat_webapps_dir and tomcat_service_name explicitly."
 
+# Pick the correct WAR vars (prefer per-version, fallback to generic)
+- name: Select WAR inputs based on Tomcat major
+  ansible.builtin.set_fact:
+    _sel_war_src: >-
+      {% if _tomcat_major == '10' and (tomcat10_war_src | default('')) | length > 0 %}{{ tomcat10_war_src }}
+      {% elif _tomcat_major == '9' and (tomcat9_war_src | default('')) | length > 0 %}{{ tomcat9_war_src }}
+      {% elif (tomcat_war_src | default('')) | length > 0 %}{{ tomcat_war_src }}
+      {% else %}{% endif %}
+    _sel_war_url: >-
+      {% if _tomcat_major == '10' and (tomcat10_war_url | default('')) | length > 0 %}{{ tomcat10_war_url }}
+      {% elif _tomcat_major == '9' and (tomcat9_war_url | default('')) | length > 0 %}{{ tomcat9_war_url }}
+      {% elif (tomcat_war_url | default('')) | length > 0 %}{{ tomcat_war_url }}
+      {% else %}{% endif %}
+    _sel_checksum: >-
+      {% if _tomcat_major == '10' and (tomcat10_war_checksum | default('')) | length > 0 %}{{ tomcat10_war_checksum }}
+      {% elif _tomcat_major == '9' and (tomcat9_war_checksum | default('')) | length > 0 %}{{ tomcat9_war_checksum }}
+      {% elif (tomcat_war_checksum | default('')) | length > 0 %}{{ tomcat_war_checksum }}
+      {% else %}{% endif %}
+
+- name: Validate exactly one WAR source is defined for the detected Tomcat
+  ansible.builtin.assert:
+    that:
+      - (_sel_war_src | length > 0) or (_sel_war_url | length > 0)
+      - not ( (_sel_war_src | length > 0) and (_sel_war_url | length > 0) )
+    fail_msg: >-
+      Provide either *_war_src or *_war_url (not both) for Tomcat {{ _tomcat_major }}.
+      Looked at tomcat{{ _tomcat_major }}_* first, then generic tomcat_war_*.
+
+# Compute names/paths
 - name: Compute deployment targets
   ansible.builtin.set_fact:
     _deploy_name: >-
@@ -57,21 +85,28 @@
     group: "{{ tomcat_group }}"
     mode: "0755"
 
-- name: Fetch WAR from URL (if provided)
-  ansible.builtin.get_url:
-    url: "{{ tomcat_war_url }}"
-    dest: "{{ _tmp_war_path }}"
-    checksum: "{{ tomcat_war_checksum if (tomcat_war_checksum | length > 0) else omit }}"
-    mode: "0644"
-  when: tomcat_war_url | length > 0
+# Optional: stop Tomcat before replacing the WAR (avoids file locks on some setups)
+- name: Stop Tomcat before deploy (optional)
+  ansible.builtin.service:
+    name: "{{ _service_name }}"
+    state: stopped
+  when: stop_before_deploy | bool
 
-- name: Copy WAR from controller (if provided)
+- name: Fetch WAR from URL (if selected)
+  ansible.builtin.get_url:
+    url: "{{ _sel_war_url }}"
+    dest: "{{ _tmp_war_path }}"
+    checksum: "{{ _sel_checksum if (_sel_checksum | length > 0) else omit }}"
+    mode: "0644"
+  when: _sel_war_url | length > 0
+
+- name: Copy WAR from controller (if selected)
   ansible.builtin.copy:
-    src: "{{ tomcat_war_src }}"
+    src: "{{ _sel_war_src }}"
     dest: "{{ _tmp_war_path }}"
     mode: "0644"
-    checksum: "{{ tomcat_war_checksum if (tomcat_war_checksum | length > 0) else omit }}"
-  when: tomcat_war_src | length > 0
+    checksum: "{{ _sel_checksum if (_sel_checksum | length > 0) else omit }}"
+  when: _sel_war_src | length > 0
 
 - name: Remove exploded app directory (if exists and requested)
   ansible.builtin.file:
@@ -93,3 +128,32 @@
   ansible.builtin.file:
     path: "{{ _tmp_war_path }}"
     state: absent
+
+# # Optional: start Tomcat again if we stopped it earlier
+# - name: Start Tomcat after deploy (if previously stopped)
+#   ansible.builtin.service:
+#     name: "{{ _service_name }}"
+#     state: started
+#     enabled: true
+#   when: stop_before_deploy | bool
+
+# # Optional: health check
+# - name: Compute healthcheck URL (if not provided)
+#   ansible.builtin.set_fact:
+#     _health_url: >-
+#       {{ (healthcheck_url | default('')) | length > 0
+#          | ternary(healthcheck_url,
+#                    'http://localhost:8080/' ~ ('' if _deploy_name == 'ROOT' else _deploy_name ~ '/')) }}
+#   when: healthcheck_enabled | bool
+
+# - name: Wait for app to be healthy
+#   ansible.builtin.uri:
+#     url: "{{ _health_url }}"
+#     status_code: "{{ healthcheck_status_code | default(200) }}"
+#     return_content: false
+#     validate_certs: true
+#   register: hc
+#   retries: "{{ healthcheck_retries | default(30) }}"
+#   delay: "{{ healthcheck_delay | default(2) }}"
+#   until: hc.status == (healthcheck_status_code | default(200))
+#   when: healthcheck_enabled | bool
