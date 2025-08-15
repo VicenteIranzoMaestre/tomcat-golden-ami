@@ -30,7 +30,7 @@ variable "ubuntu_series" {
 
 variable "user_app_name" {
   type    = string
-  default = "myapp"
+  default = "wiris"
 }
 
 variable "user_context_path" {
