@@ -57,7 +57,12 @@ source "amazon-ebs" "ubuntu" {
   instance_type           = var.instance_type
   ami_name                = "golden-tomcat-${var.ubuntu_series}-${formatdate("YYYYMMDD-hhmm", timestamp())}"
   ami_description         = "Golden AMI with Tomcat and pre-deployed app via Ansible"
+  # --- Networking: use existing VPC resources (no SG creation) ---
+  vpc_id                  = "vpc-095792c81d676ee26"
+  subnet_id               = "subnet-04075d38082f9b104"       # Choose a subnet in that VPC
+  security_group_ids      = ["sg-0e388028daa415faa"]
   associate_public_ip_address = true
+
   ssh_username            = "ubuntu"
 
   # Find the latest Ubuntu AMI from Canonical
