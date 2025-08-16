@@ -42,33 +42,40 @@
       - _service_name | length > 0
     fail_msg: "Could not determine Tomcat install. Set tomcat_webapps_dir and tomcat_service_name explicitly."
 
-# Pick the correct WAR vars (prefer per-version, fallback to generic)
-- name: Select WAR inputs based on Tomcat major
+# Pick SRC first (per-version, then generic)
+- name: Select WAR SRC by Tomcat major (prefer src over url)
   ansible.builtin.set_fact:
     _sel_war_src: >-
-      {% if _tomcat_major == '10' and (tomcat10_war_src | default('')) | length > 0 %}{{ tomcat10_war_src }}
-      {% elif _tomcat_major == '9' and (tomcat9_war_src | default('')) | length > 0 %}{{ tomcat9_war_src }}
-      {% elif (tomcat_war_src | default('')) | length > 0 %}{{ tomcat_war_src }}
-      {% else %}{% endif %}
-    _sel_war_url: >-
-      {% if _tomcat_major == '10' and (tomcat10_war_url | default('')) | length > 0 %}{{ tomcat10_war_url }}
-      {% elif _tomcat_major == '9' and (tomcat9_war_url | default('')) | length > 0 %}{{ tomcat9_war_url }}
-      {% elif (tomcat_war_url | default('')) | length > 0 %}{{ tomcat_war_url }}
-      {% else %}{% endif %}
-    _sel_checksum: >-
-      {% if _tomcat_major == '10' and (tomcat10_war_checksum | default('')) | length > 0 %}{{ tomcat10_war_checksum }}
-      {% elif _tomcat_major == '9' and (tomcat9_war_checksum | default('')) | length > 0 %}{{ tomcat9_war_checksum }}
-      {% elif (tomcat_war_checksum | default('')) | length > 0 %}{{ tomcat_war_checksum }}
+      {% if _tomcat_major == '10' and (tomcat10_war_src | default('') | length) > 0 %}{{ tomcat10_war_src }}
+      {% elif _tomcat_major == '9' and (tomcat9_war_src  | default('') | length) > 0 %}{{ tomcat9_war_src }}
+      {% elif (tomcat_war_src | default('') | length) > 0 %}{{ tomcat_war_src }}
       {% else %}{% endif %}
 
-- name: Validate exactly one WAR source is defined for the detected Tomcat
+# Only pick URL if SRC was not set
+- name: Select WAR URL by Tomcat major (only if no src)
+  ansible.builtin.set_fact:
+    _sel_war_url: >-
+      {% if (_sel_war_src | default('') | length) == 0 %}
+        {% if _tomcat_major == '10' and (tomcat10_war_url | default('') | length) > 0 %}{{ tomcat10_war_url }}
+        {% elif _tomcat_major == '9' and (tomcat9_war_url  | default('') | length) > 0 %}{{ tomcat9_war_url }}
+        {% elif (tomcat_war_url | default('') | length) > 0 %}{{ tomcat_war_url }}
+        {% else %}{% endif %}
+      {% else %}{% endif %}
+    _sel_checksum: >-
+      {% if (_sel_war_src | default('') | length) == 0 %}
+        {% if _tomcat_major == '10' and (tomcat10_war_checksum | default('') | length) > 0 %}{{ tomcat10_war_checksum }}
+        {% elif _tomcat_major == '9' and (tomcat9_war_checksum  | default('') | length) > 0 %}{{ tomcat9_war_checksum }}
+        {% elif (tomcat_war_checksum | default('') | length) > 0 %}{{ tomcat_war_checksum }}
+        {% else %}{% endif %}
+      {% else %}{% endif %}
+
+# Validate: at least one source must be present (no mutual-exclusion needed now)
+- name: Validate a WAR source is defined
   ansible.builtin.assert:
     that:
-      - (_sel_war_src | length > 0) or (_sel_war_url | length > 0)
-      - not ( (_sel_war_src | length > 0) and (_sel_war_url | length > 0) )
+      - (_sel_war_src | default('') | length) > 0 or (_sel_war_url | default('') | length) > 0
     fail_msg: >-
-      Provide either *_war_src or *_war_url (not both) for Tomcat {{ _tomcat_major }}.
-      Looked at tomcat{{ _tomcat_major }}_* first, then generic tomcat_war_*.
+      No WAR selected. Provide tomcat{{ _tomcat_major }}_war_src|url or generic tomcat_war_src|url.
 
 # Compute names/paths
 - name: Compute deployment targets
