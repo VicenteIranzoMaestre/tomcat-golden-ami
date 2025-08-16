@@ -100,7 +100,9 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update -y",
-      "sudo apt-get install -y python3 python3-apt"
+      "sudo apt-get install -y python3 python3-apt",
+      "ls -a .",
+      "echo `pwd`
     ]
   }
 
@@ -110,7 +112,8 @@ build {
     groups        = ["default"]
     extra_arguments = [
       "--extra-vars",
-      "user_app_name=${var.user_app_name}"
+      "user_app_name=${var.user_app_name}",
+      "-vvv"
     ]
   }
 

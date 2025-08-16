@@ -14,18 +14,18 @@ on:
       user_app_name:
         description: "Application name"
         required: true
-        default: myapp
-      user_context_path:
-        description: "Context path (use ROOT for /)"
-        required: true
-        default: ""
-      user_war_url:
-        description: "URL to WAR artifact"
-        required: true
-        default: ""
-      user_war_checksum:
-        description: "Optional checksum, e.g., sha256:..."
-        required: false
+        default: wiris
+      # user_context_path:
+      #   description: "Context path (use ROOT for /)"
+      #   required: true
+      #   default: ""
+      # user_war_url:
+      #   description: "URL to WAR artifact"
+      #   required: true
+      #   default: ""
+      # user_war_checksum:
+      #   description: "Optional checksum, e.g., sha256:..."
+      #   required: false
 
 permissions:
   id-token: write   # for OIDC to AWS
