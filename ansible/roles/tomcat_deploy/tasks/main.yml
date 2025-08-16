@@ -59,7 +59,7 @@
   ansible.builtin.set_fact:
     _sel_war_src: >-
       {% if _tomcat_major == '10' and (tomcat10_war_src | default('') | length) > 0 %}{{ tomcat10_war_src }}
-      {% elif _tomcat_major == '9' and (tomcat9_war_src  | default('') | length) > 0 %}{{ tomcat9_war_src }}
+      {% elif _tomcat_major == '9' and (tomcat9_war_src  | default('') | length) > 0 %}{{ tomcat9_war_src | trim }}
       {% elif (tomcat_war_src | default('') | length) > 0 %}{{ tomcat_war_src }}
       {% else %}{% endif %}
 
