@@ -163,6 +163,7 @@
 - name: Deploy WAR into webapps
   ansible.builtin.copy:
     src: "{{ _tmp_war_path }}"
+    remote_src: true
     dest: "{{ _war_final_path }}"
     owner: "{{ tomcat_owner }}"
     group: "{{ tomcat_group }}"
