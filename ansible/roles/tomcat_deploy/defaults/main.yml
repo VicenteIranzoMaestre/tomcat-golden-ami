@@ -17,6 +17,9 @@ stop_before_deploy: false
 clean_exploded_on_update: true
 restart_on_deploy: true   # (kept via handler)
 
+tomcat_webapps_dir: ""     # let the role autodetect if you don't set it
+tomcat_service_name: ""    # let the role autodetect if you don't set it
+
 # Optional healthcheck after deployment
 # healthcheck_enabled: false
 # healthcheck_url: ""           # if empty we compute http://localhost:8080/<context>/
