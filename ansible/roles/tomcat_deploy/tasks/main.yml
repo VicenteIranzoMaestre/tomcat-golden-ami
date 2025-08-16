@@ -169,7 +169,7 @@
     group: "{{ tomcat_group }}"
     mode: "0644"
     backup: true
-  notify: restart tomcat (deploy)
+  # notify: restart tomcat (deploy)
 
 - name: Clean temp WAR
   ansible.builtin.file:
@@ -177,12 +177,12 @@
     state: absent
 
 # # Optional: start Tomcat again if we stopped it earlier
-# - name: Start Tomcat after deploy (if previously stopped)
-#   ansible.builtin.service:
-#     name: "{{ _service_name }}"
-#     state: started
-#     enabled: true
-#   when: stop_before_deploy | bool
+- name: Start Tomcat after deploy (if previously stopped)
+  ansible.builtin.service:
+    name: "{{ _service_name }}"
+    state: started
+    enabled: true
+  when: stop_before_deploy | bool
 
 # # Optional: health check
 # - name: Compute healthcheck URL (if not provided)

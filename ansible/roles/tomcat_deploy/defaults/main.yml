@@ -13,7 +13,7 @@ tomcat10_war_url: ""
 tomcat10_war_checksum: ""
 
 # Behavior toggles
-stop_before_deploy: false
+stop_before_deploy: true
 clean_exploded_on_update: true
 restart_on_deploy: true   # (kept via handler)
 
