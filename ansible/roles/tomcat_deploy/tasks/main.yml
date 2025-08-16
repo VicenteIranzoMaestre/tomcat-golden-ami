@@ -82,10 +82,13 @@
   ansible.builtin.set_fact:
     _ctx: "{{ tomcat_context_path | default('') | string }}"
 
-- name: Compute deploy and war names
+- name: Compute deploy name
   ansible.builtin.set_fact:
     _deploy_name: >-
       {{ ((_ctx | length) > 0) | ternary(_ctx, tomcat_app_name) }}
+
+- name: Compute war name
+  ansible.builtin.set_fact:     
     _war_filename: >-
       {{ (_ctx == 'ROOT') | ternary('ROOT.war', _deploy_name ~ '.war') }}
 
