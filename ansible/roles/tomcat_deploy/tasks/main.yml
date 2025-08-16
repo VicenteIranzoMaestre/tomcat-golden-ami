@@ -23,6 +23,18 @@
              ('9' if st9.stat.exists else '') }}
   when: (tomcat_webapps_dir | default('') | length) == 0 or (tomcat_service_name | default('') | length) == 0
 
+## to delete
+- name: List files under ansible/ on the controller
+  ansible.builtin.command: ls -la /home/runner/work/tomcat-golden-ami/tomcat-golden-ami/ansible
+  register: ls_ansible
+  delegate_to: localhost
+  run_once: true
+  changed_when: false
+
+- name: Show listing
+  ansible.builtin.debug:
+    var: ls_ansible.stdout_lines
+## end of to delete
 
 - name: Finalize service and webapps dir
   ansible.builtin.set_fact:
