@@ -80,16 +80,16 @@
 # Compute names/paths
 - name: Compute deployment targets
   ansible.builtin.set_fact:
+    _ctx: "{{ (tomcat_context_path | default('') | string) }}"
     _deploy_name: >-
-      {{ (tomcat_context_path | default('')) | length > 0
-          | ternary(tomcat_context_path, tomcat_app_name) }}
+      {{ ( (_ctx | length) > 0 )
+         | ternary(_ctx, tomcat_app_name) }}
     _war_filename: >-
-      {{ ((tomcat_context_path | default('')) | length > 0
-           and tomcat_context_path == 'ROOT')
-           | ternary('ROOT.war', ((tomcat_context_path | default('')) | length > 0
-                                   | ternary(tomcat_context_path, tomcat_app_name)) ~ '.war') }}
+      {{ (_ctx == 'ROOT')
+         | ternary('ROOT.war', _deploy_name ~ '.war') }}
     _war_final_path: "{{ _webapps_dir }}/{{ _war_filename }}"
     _tmp_war_path: "/tmp/{{ _war_filename }}"
+
 
 - name: Ensure webapps directory exists
   ansible.builtin.file:
