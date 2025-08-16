@@ -1,6 +1,6 @@
 region          = "eu-west-1"
-ubuntu_series   = "noble" # or "jammy"
+ubuntu_series   = "jammy" # or "noble"
 user_app_name   = "wiris"
 user_context_path = "/"
-user_war_url    = "ansible/simple-app-tomcat10.war"
+user_war_url    = "simple-app-tomcat9.war"
 # user_war_checksum = "sha256:..."

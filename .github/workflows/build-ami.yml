@@ -59,12 +59,12 @@ jobs:
       - name: Packer Validate
         working-directory: packer
         run: |
-          packer validate -var "region=${{ github.event.inputs.region }}" -var "ubuntu_series=${{ github.event.inputs.ubuntu_series }}" -var "user_app_name=${{ github.event.inputs.user_app_name }}" -var "user_context_path=${{ github.event.inputs.user_context_path }}" -var "user_war_url=${{ github.event.inputs.user_war_url }}" -var "user_war_checksum=${{ github.event.inputs.user_war_checksum }}" ubuntu-golden.pkr.hcl
+          packer validate -var "region=${{ github.event.inputs.region }}" -var "ubuntu_series=${{ github.event.inputs.ubuntu_series }}" ubuntu-golden.pkr.hcl
 
       - name: Packer Build
         working-directory: packer
         run: |
-          packer build -var "region=${{ github.event.inputs.region }}" -var "ubuntu_series=${{ github.event.inputs.ubuntu_series }}" -var "user_app_name=${{ github.event.inputs.user_app_name }}" -var "user_context_path=${{ github.event.inputs.user_context_path }}" -var "user_war_url=${{ github.event.inputs.user_war_url }}" -var "user_war_checksum=${{ github.event.inputs.user_war_checksum }}" ubuntu-golden.pkr.hcl
+          packer build -var "region=${{ github.event.inputs.region }}" -var "ubuntu_series=${{ github.event.inputs.ubuntu_series }}" ubuntu-golden.pkr.hcl
 
       - name: Upload manifest
         if: always()

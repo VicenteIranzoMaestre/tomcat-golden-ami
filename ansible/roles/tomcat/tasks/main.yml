@@ -67,8 +67,3 @@
     state: started
     enabled: true
 
-
-# --- Optional WAR deployment ---
-- name: Deploy WAR if enabled
-  ansible.builtin.include_tasks: deploy_war.yml
-  when: tomcat_deploy_enabled

@@ -51,6 +51,20 @@
       {% elif (tomcat_war_src | default('') | length) > 0 %}{{ tomcat_war_src }}
       {% else %}{% endif %}
 
+## to delete
+- name: Verify WAR exists on controller when using src
+  ansible.builtin.stat:
+    path: "{{ _sel_war_src }}"
+  register: _warstat
+  when: (_sel_war_src | default('') | trim | length) > 0
+
+- name: Assert WAR is present on controller
+  ansible.builtin.assert:
+    that: _warstat.stat.exists
+    fail_msg: "WAR not found on controller at {{ _sel_war_src }}. Expected file alongside playbook."
+  when: (_sel_war_src | default('') | trim | length) > 0
+## end of to delete
+
 # Only pick URL if SRC was not set
 - name: Select WAR URL by Tomcat major (only if no src)
   ansible.builtin.set_fact:
