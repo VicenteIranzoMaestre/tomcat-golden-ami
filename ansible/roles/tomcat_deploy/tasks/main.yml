@@ -63,19 +63,19 @@
       {% elif (tomcat_war_src | default('') | length) > 0 %}{{ tomcat_war_src }}
       {% else %}{% endif %}
 
-## to delete
-- name: Verify WAR exists on controller when using src
-  ansible.builtin.stat:
-    path: "{{ _sel_war_src | trim }}"
-  register: _warstat
-  when: (_sel_war_src | default('') | trim | length) > 0
+# ## to delete
+# - name: Verify WAR exists on controller when using src
+#   ansible.builtin.stat:
+#     path: "{{ _sel_war_src | trim }}"
+#   register: _warstat
+#   when: (_sel_war_src | default('') | trim | length) > 0
 
-- name: Assert WAR is present on controller
-  ansible.builtin.assert:
-    that: _warstat.stat.exists
-    fail_msg: "WAR not found on controller at {{ _sel_war_src }}. Expected file alongside playbook."
-  when: (_sel_war_src | default('') | trim | length) > 0
-## end of to delete
+# - name: Assert WAR is present on controller
+#   ansible.builtin.assert:
+#     that: _warstat.stat.exists
+#     fail_msg: "WAR not found on controller at {{ _sel_war_src }}. Expected file alongside playbook."
+#   when: (_sel_war_src | default('') | trim | length) > 0
+# ## end of to delete
 
 # Only pick URL if SRC was not set
 - name: Select WAR URL by Tomcat major (only if no src)
@@ -144,7 +144,7 @@
     dest: "{{ _tmp_war_path }}"
     checksum: "{{ _sel_checksum if (_sel_checksum | length > 0) else omit }}"
     mode: "0644"
-  when: _sel_war_url | length > 0
+  when: (_sel_war_url | default('') | trim | length) > 0
 
 - name: Copy WAR from controller (if selected)
   ansible.builtin.copy:
@@ -152,7 +152,7 @@
     dest: "{{ _tmp_war_path }}"
     mode: "0644"
     checksum: "{{ _sel_checksum if (_sel_checksum | length > 0) else omit }}"
-  when: _sel_war_src | length > 0
+  when: (_sel_war_src | default('') | trim | length) > 0
 
 - name: Remove exploded app directory (if exists and requested)
   ansible.builtin.file:
