@@ -102,7 +102,7 @@ build {
       "sudo apt-get update -y",
       "sudo apt-get install -y python3 python3-apt",
       "ls -a .",
-      "echo `pwd`
+      "echo `pwd`"
     ]
   }
 
