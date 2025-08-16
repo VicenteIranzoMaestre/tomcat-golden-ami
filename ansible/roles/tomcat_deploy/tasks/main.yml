@@ -66,7 +66,7 @@
 ## to delete
 - name: Verify WAR exists on controller when using src
   ansible.builtin.stat:
-    path: "{{ _sel_war_src }}"
+    path: "{{ _sel_war_src | trim }}"
   register: _warstat
   when: (_sel_war_src | default('') | trim | length) > 0
 
@@ -148,7 +148,7 @@
 
 - name: Copy WAR from controller (if selected)
   ansible.builtin.copy:
-    src: "{{ _sel_war_src }}"
+    src: "{{ _sel_war_src | trim }}"
     dest: "{{ _tmp_war_path }}"
     mode: "0644"
     checksum: "{{ _sel_checksum if (_sel_checksum | length > 0) else omit }}"
